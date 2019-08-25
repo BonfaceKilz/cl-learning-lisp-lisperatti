@@ -87,13 +87,13 @@
                                 (if (intersection (edge-pair node1 node2)
                                                   edges-with-cops
                                                   :test #'equal)
-                                    (list-node2 'cops)
+                                    (list node2 'cops)
                                     edge)))
                             node1-edges))))
           edge-alist))
 
 (defun neighbors (node edge-alist)
-  (mapcar #'car (cdr assoc node edge-alist)))
+  (mapcar #'car (cdr (assoc node edge-alist))))
 
 (defun within-one (a b edge-alist)
   (member b (neighbors a edge-alist)))
@@ -126,7 +126,8 @@
   (setf *congestion-city-nodes* (make-city-nodes *congestion-city-edges*))
   (setf *player-pos* (find-empty-node))
   (setf *visited-nodes* (list *player-pos*))
-  (draw-city))
+  (draw-city)
+  (draw-known-city))
 
 (defun find-empty-node ()
   (let ((x (random-node)))
@@ -136,3 +137,31 @@
 
 (defun draw-city ()
   (ugraph->png "city" *congestion-city-nodes* *congestion-city-edges*))
+
+(defun known-city-nodes ()
+  (mapcar (lambda (node)
+            (if (member node *visited-nodes*)
+                (let ((n (assoc node *congestion-city-nodes*)))
+                  (if (eql node *player-pos*)
+                      (append n '(*))
+                      n))
+                (list node '?)))
+          (remove-duplicates
+           (append *visited-nodes*
+                   (mapcan (lambda (node)
+                             (mapcar #'car
+                                     (cdr (assoc node
+                                                 *congestion-city-edges*))))
+                           *visited-nodes*)))))
+
+(defun known-city-edges ()
+  (mapcar (lambda (node)
+            (cons node (mapcar (lambda (x)
+                                 (if (member (car x) *visited-nodes*)
+                                     x
+                                     (list (car x))))
+                               (cdr (assoc node *congestion-city-edges*)))))
+          *visited-nodes*))
+
+(defun draw-known-city ()
+  (ugraph->png "known-city" (known-city-nodes) (known-city-edges)))
