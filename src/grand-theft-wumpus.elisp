@@ -133,3 +133,6 @@
     (if (cdr (assoc x *congestion-city-nodes*))
         (find-empty-node)
         x)))
+
+(defun draw-city ()
+  (ugraph->png "city" *congestion-city-nodes* *congestion-city-edges*))
